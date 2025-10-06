@@ -107,8 +107,6 @@ src/
 - **Arbitrum One** - Chain ID: 42161
 - **Arbitrum Sepolia** - Chain ID: 421614
 
-Each network has different Web3Mail application addresses that are automatically configured.
-
 ---
 
 ## 🚀 Next Steps
