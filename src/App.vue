@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import WelcomeBlock from "./components/WelcomeBlock.vue";
 import {
   type ProtectedData,
+  type GrantedAccess,
   IExecDataProtectorCore,
   IExecDataProtector,
 } from "@iexec/dataprotector";
@@ -12,7 +13,7 @@ import wagmiNetworks from "./config/wagmiNetworks";
 
 const { open } = useAppKit();
 const { disconnectAsync } = useDisconnect();
-const { isConnected, connector, chainId } = useAccount();
+const { isConnected, connector, chainId, address } = useAccount();
 const { switchChain } = useSwitchChain();
 
 const dataProtectorCore = ref<IExecDataProtectorCore | null>(null);
@@ -22,6 +23,23 @@ const dataToProtect = ref({
 });
 const protectedData = ref<ProtectedData>();
 const isLoading = ref(false);
+
+// iExec Web3Mail app addresses by chain
+const web3MailAddresses = {
+  134: "0x781482c39cce25546583eac4957fb7bf04c277d2", // iExec Sidechain (Bellecour)
+  42161: "0xd5054a18565c4a9e5c1aa3ceb53258bd59d4c78c", // Arbitrum One
+} as const;
+
+// Grant Access form data
+const grantAccessData = ref({
+  protectedDataAddress: protectedData.value?.address || "",
+  authorizedApp: "",
+  authorizedUser: "",
+  pricePerAccess: 0,
+  numberOfAccess: 1,
+});
+const grantedAccess = ref<GrantedAccess>();
+const isGrantingAccess = ref(false);
 
 const login = () => {
   open({ view: "Connect" });
@@ -49,6 +67,14 @@ const handleChainChange = async (event: Event) => {
 };
 
 const networks = Object.values(wagmiNetworks);
+
+// Get Web3Mail address for current chain
+const getCurrentWeb3MailAddress = () => {
+  const currentChainId = chainId.value;
+  return (
+    web3MailAddresses[currentChainId as keyof typeof web3MailAddresses] || ""
+  );
+};
 
 watch(
   [isConnected, connector],
@@ -83,6 +109,31 @@ const protectData = async (event: Event) => {
       console.error("Error protecting data:", error);
     } finally {
       isLoading.value = false;
+    }
+  }
+};
+
+const grantDataAccess = async (event: Event) => {
+  event.preventDefault();
+  if (dataProtectorCore.value) {
+    isGrantingAccess.value = true;
+    try {
+      const result = await dataProtectorCore.value.grantAccess({
+        protectedData: grantAccessData.value.protectedDataAddress,
+        authorizedApp: grantAccessData.value.authorizedApp,
+        authorizedUser: grantAccessData.value.authorizedUser,
+        pricePerAccess: grantAccessData.value.pricePerAccess,
+        numberOfAccess: grantAccessData.value.numberOfAccess,
+        onStatusUpdate: ({ title, isDone }) => {
+          console.log(`Grant Access Status: ${title}, Done: ${isDone}`);
+        },
+      });
+      console.log("Granted Access:", result);
+      grantedAccess.value = result;
+    } catch (error) {
+      console.error("Error granting access:", error);
+    } finally {
+      isGrantingAccess.value = false;
     }
   }
 };
@@ -142,6 +193,7 @@ const protectData = async (event: Event) => {
               type="text"
               id="data_name"
               placeholder="Name to identify your data"
+              maxlength="100"
             />
           </div>
           <div class="mb-5">
@@ -156,6 +208,7 @@ const protectData = async (event: Event) => {
               type="text"
               id="data_content"
               placeholder="Enter text to protect"
+              maxlength="500"
             />
           </div>
           <button
@@ -169,7 +222,7 @@ const protectData = async (event: Event) => {
 
         <div
           v-if="protectedData"
-          class="bg-green-100 border border-green-300 rounded-xl p-6 mt-6"
+          class="bg-green-50 border rounded-xl p-6 mt-6"
         >
           <h3 class="text-green-800 mb-4 text-lg font-semibold">
             ✅ Data protected successfully!
@@ -179,6 +232,193 @@ const protectData = async (event: Event) => {
             <p><strong>Address:</strong> {{ protectedData.address }}</p>
             <p><strong>Owner:</strong> {{ protectedData.owner }}</p>
             <p><strong>Multiaddr:</strong> {{ protectedData.multiaddr }}</p>
+          </div>
+        </div>
+
+        <!-- Grant Access Form -->
+        <div class="mt-12 pt-8 border-t border-gray-200">
+          <h2 class="mb-6 text-2xl font-semibold text-gray-800">
+            Grant Access to Protected Data
+          </h2>
+          <form @submit="grantDataAccess" class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  for="protected_data_address"
+                  class="block mb-2 font-medium text-gray-700"
+                >
+                  Protected Data Address *
+                </label>
+                <input
+                  v-model="grantAccessData.protectedDataAddress"
+                  type="text"
+                  id="protected_data_address"
+                  placeholder="0x123abc..."
+                  maxlength="42"
+                  required
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  Address of the protected data you own
+                </p>
+                <button
+                  type="button"
+                  @click.prevent="
+                    grantAccessData.protectedDataAddress =
+                      protectedData?.address || ''
+                  "
+                  :disabled="!protectedData?.address"
+                  class="mt-1 secondary h-9!"
+                >
+                  Use protected data address
+                </button>
+              </div>
+
+              <div>
+                <label
+                  for="authorized_user"
+                  class="block mb-2 font-medium text-gray-700"
+                >
+                  Authorized User Address *
+                </label>
+                <input
+                  v-model="grantAccessData.authorizedUser"
+                  type="text"
+                  id="authorized_user"
+                  placeholder="0x789cba... or 0x0000... for all users"
+                  maxlength="42"
+                  required
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  User who can access the data (use 0x0000... for all users)
+                </p>
+                <button
+                  type="button"
+                  @click.prevent="
+                    grantAccessData.authorizedUser = address || ''
+                  "
+                  :disabled="!address"
+                  class="mt-1 secondary h-9!"
+                >
+                  Use current wallet address
+                </button>
+              </div>
+
+              <div>
+                <label
+                  for="authorized_app"
+                  class="block mb-2 font-medium text-gray-700"
+                >
+                  Authorized App Address *
+                </label>
+                <input
+                  v-model="grantAccessData.authorizedApp"
+                  type="text"
+                  id="authorized_app"
+                  placeholder="Enter iExec app address (0x...)"
+                  maxlength="42"
+                  required
+                />
+                <div class="text-xs text-gray-500 mt-2 space-y-1">
+                  <p>application authorized to access your protected data.</p>
+                  <p class="text-gray-400 mt-1">
+                    App addresses vary by chain. Always verify before granting
+                    access.
+                  </p>
+                </div>
+                <button
+                  v-if="getCurrentWeb3MailAddress()"
+                  type="button"
+                  @click.prevent="
+                    grantAccessData.authorizedApp = getCurrentWeb3MailAddress()
+                  "
+                  class="mt-2 secondary h-9!"
+                >
+                  Use Web3Mail Whitelist address for current chain
+                </button>
+              </div>
+
+              <div>
+                <label
+                  for="number_of_access"
+                  class="block mb-2 font-medium text-gray-700"
+                >
+                  Number of Access
+                </label>
+                <input
+                  v-model.number="grantAccessData.numberOfAccess"
+                  type="number"
+                  id="number_of_access"
+                  placeholder="1"
+                  min="1"
+                  max="10000"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  How many times the data can be accessed
+                </p>
+              </div>
+
+              <div class="md:col-span-2">
+                <label
+                  for="price_per_access"
+                  class="block mb-2 font-medium text-gray-700"
+                >
+                  Price Per Access (nRLC)
+                </label>
+                <input
+                  v-model.number="grantAccessData.pricePerAccess"
+                  type="number"
+                  id="price_per_access"
+                  placeholder="0"
+                  min="0"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  Fee in nano RLC for each access (1 RLC = 10^9 nRLC)
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <button
+                :disabled="
+                  !grantAccessData.protectedDataAddress ||
+                  !grantAccessData.authorizedUser ||
+                  !grantAccessData.authorizedApp ||
+                  isGrantingAccess
+                "
+                class="primary"
+                type="submit"
+              >
+                {{ isGrantingAccess ? "Granting Access..." : "Grant Access" }}
+              </button>
+            </div>
+          </form>
+
+          <div
+            v-if="grantedAccess"
+            class="bg-blue-100 border border-blue-300 rounded-xl p-6 mt-6"
+          >
+            <h3 class="text-blue-800 mb-4 text-lg font-semibold">
+              ✅ Access granted successfully!
+            </h3>
+            <div class="text-blue-800 space-y-2 text-sm">
+              <p><strong>Dataset:</strong> {{ grantedAccess.dataset }}</p>
+              <p>
+                <strong>Dataset Price:</strong>
+                {{ grantedAccess.datasetprice }} nRLC
+              </p>
+              <p><strong>Volume:</strong> {{ grantedAccess.volume }}</p>
+              <p>
+                <strong>App Restrict:</strong> {{ grantedAccess.apprestrict }}
+              </p>
+              <p>
+                <strong>Workerpool Restrict:</strong>
+                {{ grantedAccess.workerpoolrestrict }}
+              </p>
+              <p>
+                <strong>Requester Restrict:</strong>
+                {{ grantedAccess.requesterrestrict }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
