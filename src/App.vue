@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import WelcomeBlock from "./components/WelcomeBlock.vue";
-import { ProtectedData, IExecDataProtectorCore, IExecDataProtector } from "@iexec/dataprotector";
-import { useAccount, useDisconnect } from "@wagmi/vue";
+import {
+  type ProtectedData,
+  IExecDataProtectorCore,
+  IExecDataProtector,
+} from "@iexec/dataprotector";
+import { useAccount, useDisconnect, useSwitchChain } from "@wagmi/vue";
 import { useAppKit } from "@reown/appkit/vue";
+import wagmiNetworks from "./config/wagmiNetworks";
 
 const { open } = useAppKit();
 const { disconnectAsync } = useDisconnect();
-const { isConnected, connector } = useAccount();
+const { isConnected, connector, chainId } = useAccount();
+const { switchChain } = useSwitchChain();
 
 const dataProtectorCore = ref<IExecDataProtectorCore | null>(null);
 const dataToProtect = ref({
@@ -29,7 +35,21 @@ const logout = async () => {
   }
 };
 
-// Watcher Vue équivalent à useEffect
+const handleChainChange = async (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  const newChainId = parseInt(target.value);
+
+  if (newChainId && newChainId !== chainId.value) {
+    try {
+      await switchChain({ chainId: newChainId });
+    } catch (error) {
+      console.error("Failed to switch chain:", error);
+    }
+  }
+};
+
+const networks = Object.values(wagmiNetworks);
+
 watch(
   [isConnected, connector],
   async ([connected, conn]: [boolean, any]) => {
@@ -78,10 +98,31 @@ const protectData = async (event: Event) => {
           iExec Vue.js Starter
         </div>
       </div>
-      <button v-if="!isConnected" @click="login" class="primary">
-        Connect my wallet
-      </button>
-      <button v-else @click="logout" class="secondary">Disconnect</button>
+      <div class="flex items-center gap-4">
+        <div v-if="isConnected" class="flex items-center gap-2">
+          <label for="chain-selector" class="text-sm font-medium text-gray-700">
+            Chain:
+          </label>
+          <select
+            id="chain-selector"
+            :value="chainId"
+            @change="handleChainChange"
+            class="chain-selector"
+          >
+            <option
+              v-for="network in networks"
+              :key="network.id"
+              :value="network.id"
+            >
+              {{ network.name }}
+            </option>
+          </select>
+        </div>
+        <button v-if="!isConnected" @click="login" class="primary">
+          Connect my wallet
+        </button>
+        <button v-else @click="logout" class="secondary">Disconnect</button>
+      </div>
     </nav>
 
     <WelcomeBlock />
