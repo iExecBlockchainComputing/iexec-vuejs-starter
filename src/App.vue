@@ -222,12 +222,12 @@ const grantDataAccess = async (event: Event) => {
 
         <div
           v-if="protectedData"
-          class="bg-green-50 border rounded-xl p-6 mt-6"
+          class="bg-blue-100 border border-blue-300 rounded-xl p-6 mt-6"
         >
-          <h3 class="text-green-800 mb-4 text-lg font-semibold">
+          <h3 class="text-blue-800 mb-4 text-lg font-semibold">
             ✅ Data protected successfully!
           </h3>
-          <div class="text-green-800 space-y-2">
+          <div class="text-blue-800 space-y-2 text-sm">
             <p><strong>Name:</strong> {{ protectedData.name }}</p>
             <p><strong>Address:</strong> {{ protectedData.address }}</p>
             <p><strong>Owner:</strong> {{ protectedData.owner }}</p>
