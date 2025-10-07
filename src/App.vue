@@ -297,7 +297,6 @@ const grantDataAccess = async (event: Event) => {
                 </svg>
               </a>
             </p>
-            <p><strong>Multiaddr:</strong> {{ protectedData.multiaddr }}</p>
           </div>
         </div>
 
