@@ -9,7 +9,7 @@ import {
 } from "@iexec/dataprotector";
 import { useAccount, useDisconnect, useSwitchChain } from "@wagmi/vue";
 import { useAppKit } from "@reown/appkit/vue";
-import wagmiNetworks from "./config/wagmiNetworks";
+import wagmiNetworks, { explorerSlugs } from "./config/wagmiNetworks";
 
 const { open } = useAppKit();
 const { disconnectAsync } = useDisconnect();
@@ -74,6 +74,20 @@ const getCurrentWeb3MailAddress = () => {
   return (
     web3MailAddresses[currentChainId as keyof typeof web3MailAddresses] || ""
   );
+};
+
+// Get explorer URL for current chain using iExec explorer
+const getExplorerUrl = (
+  address: string,
+  type: "address" | "dataset" = "address"
+) => {
+  const currentChainId = chainId.value;
+  if (!currentChainId) return null;
+  
+  const explorerSlug = explorerSlugs[currentChainId];
+  if (!explorerSlug) return null;
+
+  return `https://explorer.iex.ec/${explorerSlug}/${type}/${address}`;
 };
 
 watch(
@@ -231,8 +245,58 @@ const grantDataAccess = async (event: Event) => {
           </h3>
           <div class="text-blue-800 space-y-2 text-sm">
             <p><strong>Name:</strong> {{ protectedData.name }}</p>
-            <p><strong>Address:</strong> {{ protectedData.address }}</p>
-            <p><strong>Owner:</strong> {{ protectedData.owner }}</p>
+            <p>
+              <strong>Address:</strong> {{ protectedData.address }}
+              <a
+                v-if="getExplorerUrl(protectedData.address, 'dataset')"
+                :href="getExplorerUrl(protectedData.address, 'dataset')!"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                View Dataset
+                <svg
+                  class="inline-block w-3 h-3 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+            </p>
+            <p>
+              <strong>Owner:</strong> {{ protectedData.owner }}
+              <a
+                v-if="getExplorerUrl(protectedData.owner, 'address')"
+                :href="getExplorerUrl(protectedData.owner, 'address')!"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                View Address
+                <svg
+                  class="inline-block w-3 h-3 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+            </p>
             <p><strong>Multiaddr:</strong> {{ protectedData.multiaddr }}</p>
           </div>
         </div>
@@ -403,7 +467,32 @@ const grantDataAccess = async (event: Event) => {
               ✅ Access granted successfully!
             </h3>
             <div class="text-blue-800 space-y-2 text-sm">
-              <p><strong>Dataset:</strong> {{ grantedAccess.dataset }}</p>
+              <p>
+                <strong>Dataset:</strong> {{ grantedAccess.dataset }}
+                <a
+                  v-if="getExplorerUrl(grantedAccess.dataset, 'dataset')"
+                  :href="getExplorerUrl(grantedAccess.dataset, 'dataset')!"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  View Dataset
+                  <svg
+                    class="inline-block w-3 h-3 ml-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
+              </p>
               <p>
                 <strong>Dataset Price:</strong>
                 {{ grantedAccess.datasetprice }} nRLC
@@ -419,6 +508,35 @@ const grantDataAccess = async (event: Event) => {
               <p>
                 <strong>Requester Restrict:</strong>
                 {{ grantedAccess.requesterrestrict }}
+                <a
+                  v-if="
+                    grantedAccess.requesterrestrict !==
+                      '0x0000000000000000000000000000000000000000' &&
+                    getExplorerUrl(grantedAccess.requesterrestrict, 'address')
+                  "
+                  :href="
+                    getExplorerUrl(grantedAccess.requesterrestrict, 'address')!
+                  "
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  View Requester
+                  <svg
+                    class="inline-block w-3 h-3 ml-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
               </p>
             </div>
           </div>
