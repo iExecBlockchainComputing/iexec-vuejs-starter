@@ -82,7 +82,9 @@ watch(
     if (connected && conn) {
       try {
         const provider = await conn.getProvider();
-        const dataProtector = new IExecDataProtector(provider);
+        const dataProtector = new IExecDataProtector(provider, {
+          allowExperimentalNetworks: true,
+        });
         dataProtectorCore.value = dataProtector.core;
       } catch (error) {
         console.error("Failed to initialize data protector:", error);
