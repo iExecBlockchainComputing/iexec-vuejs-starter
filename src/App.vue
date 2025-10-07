@@ -395,7 +395,7 @@ const grantDataAccess = async (event: Event) => {
                     :href="getExplorerUrl('apps')!"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                    class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     See available apps on Explorer
                     <svg
