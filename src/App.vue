@@ -255,7 +255,7 @@ const grantDataAccess = async (event: Event) => {
                 rel="noopener noreferrer"
                 class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
               >
-                View Dataset
+                View Protected Data
                 <svg
                   class="inline-block w-3 h-3 ml-1"
                   fill="none"
@@ -374,20 +374,20 @@ const grantDataAccess = async (event: Event) => {
                   for="authorized_app"
                   class="block mb-2 font-medium text-gray-700"
                 >
-                  Authorized App Address *
+                  Authorized iApp Address *
                 </label>
                 <input
                   v-model="grantAccessData.authorizedApp"
                   type="text"
                   id="authorized_app"
-                  placeholder="Enter iExec app address (0x...)"
+                  placeholder="Enter iApp address (0x...)"
                   maxlength="42"
                   required
                 />
                 <div class="text-xs text-gray-500 mt-2 space-y-1">
-                  <p>application authorized to access your protected data.</p>
+                  <p>iApp authorized to access your protected data.</p>
                   <p class="text-gray-400 mt-1">
-                    App addresses vary by chain. Always verify before granting
+                    iApp addresses vary by chain. Always verify before granting
                     access.
                   </p>
                   <a
@@ -397,7 +397,7 @@ const grantDataAccess = async (event: Event) => {
                     rel="noopener noreferrer"
                     class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
                   >
-                    See available apps on Explorer
+                    See available iApp on Explorer
                     <svg
                       class="inline-block w-3 h-3 ml-1"
                       fill="none"
@@ -491,7 +491,7 @@ const grantDataAccess = async (event: Event) => {
             </h3>
             <div class="text-blue-800 space-y-2 text-sm">
               <p>
-                <strong>Dataset:</strong> {{ grantedAccess.dataset }}
+                <strong>Protected Data:</strong> {{ grantedAccess.dataset }}
                 <a
                   v-if="getExplorerUrl(grantedAccess.dataset, 'dataset')"
                   :href="getExplorerUrl(grantedAccess.dataset, 'dataset')!"
@@ -499,7 +499,7 @@ const grantDataAccess = async (event: Event) => {
                   rel="noopener noreferrer"
                   class="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  View Dataset
+                  View Protected
                   <svg
                     class="inline-block w-3 h-3 ml-1"
                     fill="none"
@@ -517,12 +517,12 @@ const grantDataAccess = async (event: Event) => {
                 </a>
               </p>
               <p>
-                <strong>Dataset Price:</strong>
+                <strong>Protected Data Price:</strong>
                 {{ grantedAccess.datasetprice }} nRLC
               </p>
               <p><strong>Volume:</strong> {{ grantedAccess.volume }}</p>
               <p>
-                <strong>App Restrict:</strong> {{ grantedAccess.apprestrict }}
+                <strong>iApp Restrict:</strong> {{ grantedAccess.apprestrict }}
               </p>
               <p>
                 <strong>Workerpool Restrict:</strong>
